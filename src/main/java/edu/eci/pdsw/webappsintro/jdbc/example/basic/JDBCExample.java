@@ -21,6 +21,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -34,10 +35,10 @@ public class JDBCExample {
     
     public static void main(String args[]){
         try {
-            String url="jdbc:mysql://HOST:3306/BD";
+            String url="jdbc:mysql://desarrollo.is.escuelaing.edu.co:3306/bdprueba";
             String driver="com.mysql.jdbc.Driver";
-            String user="USER";
-            String pwd="PWD";
+            String user="bdprueba";
+            String pwd="bdprueba";
                         
             Class.forName(driver);
             Connection con=DriverManager.getConnection(url,user,pwd);
@@ -84,8 +85,16 @@ public class JDBCExample {
      */
     public static void registrarNuevoProducto(Connection con, int codigo, String nombre,int precio) throws SQLException{
         //Crear preparedStatement
+        PreparedStatement registrarProducto = null;
+        String insertString = "insert into "+"bdprueba"+".ORD_PRODUCTOS"+"(codigo,nombre,precio)"+
+                               "values ( ? , ? , ? )";
+        registrarProducto= con.prepareStatement(insertString);
         //Asignar parámetros
+        registrarProducto.setInt(1,codigo);
+        registrarProducto.setString(2,nombre);
+        registrarProducto.setInt(3,precio);
         //usar 'execute'
+        registrarProducto.execute();
 
         
         con.commit();
@@ -98,13 +107,25 @@ public class JDBCExample {
      * @param codigoPedido el código del pedido
      * @return 
      */
-    public static List<String> nombresProductosPedido(Connection con, int codigoPedido){
+    public static List<String> nombresProductosPedido(Connection con, int codigoPedido) throws SQLException{
         List<String> np=new LinkedList<>();
         
         //Crear prepared statement
+        PreparedStatement consultaProducto = null;
+        String consulta= "select "+ "bdprueba.ord_productos.nombre"+  " from "+"bdprueba.ord_prodcutos"
+                +"where "+"bdprueba.ord_productos.codigo"+"="+"bdprueba.ord_detalles_pedido.producto_fk"+"and "
+                +"bdprueba.ord_detalles_pedido.producto_fk"+"="+"?";
+        consultaProducto= con.prepareStatement(consulta);
         //asignar parámetros
+        consultaProducto.setInt(1,codigoPedido);
         //usar executeQuery
+        ResultSet rs= consultaProducto.executeQuery(consulta);
+        
         //Sacar resultados del ResultSet
+        for(int i=0;i<rs.getFetchSize();i++){
+            np.add(rs.getString(i));
+        }
+        
         //Llenar la lista y retornarla
         
         return np;
