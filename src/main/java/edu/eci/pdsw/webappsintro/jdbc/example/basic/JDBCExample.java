@@ -86,12 +86,10 @@ public class JDBCExample {
     public static void registrarNuevoProducto(Connection con, int codigo, String nombre,int precio) throws SQLException{
         //Crear preparedStatement
         PreparedStatement registrarProducto = null;
-        String insertString = "insert into "+"bdprueba"+".ORD_PRODUCTOS"+"(codigo,nombre,precio)"+
+        String insertString = "insert into "+"ORD_PRODUCTOS"+
                                    "values ( ? , ? , ? )"; 
         
-        try{
-        con.setAutoCommit(false);
-
+        
             registrarProducto= con.prepareStatement(insertString);
             //Asignar parámetros
             registrarProducto.setInt(1,codigo);
@@ -101,27 +99,8 @@ public class JDBCExample {
             registrarProducto.execute();
 
 
-            con.commit();
-        } catch (SQLException e ) {
-        //JDBCTutorialUtilities.printSQLException(e);
-        if (con != null) {
-            try {
-                System.err.print("Transaction is being rolled back");
-                con.rollback();
-            } catch(SQLException excep) {
-                //JDBCTutorialUtilities.printSQLException(excep);
-            }
-        }
-    } finally {
-        if (registrarProducto != null) {
-            registrarProducto.close();
-        }
-        if (registrarProducto != null) {
-            registrarProducto.close();
-        }
-        con.setAutoCommit(true);
-    }
-        con.close();
+        
+
     }
     
     /**
@@ -135,45 +114,26 @@ public class JDBCExample {
         
         //Crear prepared statement
         PreparedStatement consultaProducto = null;
-        String consulta= "select "+ "bdprueba.ord_productos.nombre"+  " from "+"bdprueba.ord_prodcutos"
-                +"where "+"bdprueba.ord_productos.codigo"+"="+"bdprueba.ord_detalles_pedido.producto_fk"+"and "
-                +"bdprueba.ord_detalles_pedido.producto_fk"+"="+"?";
-        try{
-            con.setAutoCommit(false);
+        String consulta= "select "+ "ORD_PRODUCTOS.nombre"+  " from "+"ORD_PRODUCTOS "
+                +"where "+" ORD_PRODUCTOS.codigo"+"="+"ord_detalles_pedido.producto_fk"+" and "
+                +"ord_detalles_pedido.producto_fk"+"="+"?";
+        
             consultaProducto= con.prepareStatement(consulta);
             //asignar parámetros
             consultaProducto.setInt(1,codigoPedido);
             //usar executeQuery
-            ResultSet rs= consultaProducto.executeQuery(consulta);
-            con.commit();
+            
+            ResultSet rs= consultaProducto.executeQuery();
+            
+
             //Sacar resultados del ResultSet
-            for(int i=0;i<rs.getFetchSize();i++){
-                np.add(rs.getString(i));
-            }
+            while(rs.next()){np.add(rs.getString("nombre"));}
 
             //Llenar la lista y retornarla
-        }
-        catch (SQLException e ) {
-        //JDBCTutorialUtilities.printSQLException(e);
-        if (con != null) {
-            try {
-                System.err.print("Transaction is being rolled back");
-                con.rollback();
-            } catch(SQLException excep) {
-                //JDBCTutorialUtilities.printSQLException(excep);
-            }
-        }
-    } finally {
-        if (consultaProducto != null) {
-            consultaProducto.close();
-        }
-        if (consultaProducto != null) {
-            consultaProducto.close();
-        }
-        con.setAutoCommit(true);
-    }
-        con.close();
+        
+       
         return np;
+    
     }
 
     
@@ -187,44 +147,23 @@ public class JDBCExample {
         
         //Crear prepared statement
         PreparedStatement  valorTotal = null;
-        String valor="SELECT "+"SUM(ORD_DETALLES_PEDIDO.CANTIDAD*ORD_PRODUCTOS.PRECIO) "
+        String valor="SELECT "+"SUM(ORD_DETALLES_PEDIDO.CANTIDAD*ORD_PRODUCTOS.PRECIO) as total "
                 + "FROM "+"ORD_PEDIDOS, ORD_DETALLES_PEDIDO, ORD_PRODUCTOS "
                 + "WHERE "+"ORD_PEDIDOS.CODIGO"+"="+"ORD_DETALLES_PEDIDO.PEDIDO_FK "
-                + "AND "+"ORD_DETALLES_PEDIDO.PRODUCTO_FK "+"="+" ORD_PRODUCTOS.CODIGO"
+                + "AND "+"ORD_DETALLES_PEDIDO.PRODUCTO_FK "+"="+" ORD_PRODUCTOS.CODIGO "
                 + "AND "+"ORD_PEDIDOS.CODIGO "+"="+"?";
         int ans=0;
         
-        try{
-            con.setAutoCommit(false);
+        
             valorTotal=con.prepareStatement(valor);
             //asignar parámetros
             valorTotal.setInt(1, codigoPedido);
             //usar executeQuery
             ResultSet rs = valorTotal.executeQuery();
-            con.commit();
+            while(rs.next()){ans+=rs.getInt("total");}
             //Sacar resultado del ResultSet
-            ans=rs.getInt(1);
-        }
-        catch (SQLException e ) {
-        //JDBCTutorialUtilities.printSQLException(e);
-        if (con != null) {
-            try {
-                System.err.print("Transaction is being rolled back");
-                con.rollback();
-            } catch(SQLException excep) {
-                //JDBCTutorialUtilities.printSQLException(excep);
-            }
-        }
-    } finally {
-        if (valorTotal != null) {
-            valorTotal.close();
-        }
-        if (valorTotal != null) {
-            valorTotal.close();
-        }
-        con.setAutoCommit(true);
-    }
-        con.close();
+        
+       
         return ans;
     }
     
@@ -240,75 +179,22 @@ public class JDBCExample {
         //Crear prepared statement
         PreparedStatement  updateProducto = null;
         PreparedStatement  consultaProducto = null;
-        String updateString = "update " + "dbprueba" + ".ORD_PRODUCTOS " +
+        String updateString = "update " + "ORD_PRODUCTOS " +
                 "set nombre = ? where codigo = ?";
-        try{
-            con.setAutoCommit(false);
             updateProducto = con.prepareStatement(updateString);
             //asignar parámetros
             updateProducto.setString(1,nuevoNombre);
             updateProducto.setInt(2,codigoProducto);
             //usar executeUpdate
             updateProducto.executeUpdate();
-            con.commit();
             //verificar que se haya actualizado exactamente un registro
-            String consulta = "select nombre from dbprueba.ORD_PRODUCTOS Where codigo="+"?";
+            String consulta = "select nombre from ORD_PRODUCTOS Where codigo="+"?";
             consultaProducto= con.prepareStatement(consulta);
             consultaProducto.executeQuery();
-            con.commit();
-        }
-        catch (SQLException e ) {
-        //JDBCTutorialUtilities.printSQLException(e);
-        if (con != null) {
-            try {
-                System.err.print("Transaction is being rolled back");
-                con.rollback();
-            } catch(SQLException excep) {
-                //JDBCTutorialUtilities.printSQLException(excep);
-            }
-        }
-    } finally {
-        if (updateProducto != null) {
-            updateProducto.close();
-        }
-        if (updateProducto != null) {
-            updateProducto.close();
-        }
-        con.setAutoCommit(true);
-    }
-        try{
-            con.setAutoCommit(false);
             //verificar que se haya actualizado exactamente un registro
-            String consulta = "select nombre from dbprueba.ORD_PRODUCTOS Where codigo="+"?";
+            consulta = "select nombre from ORD_PRODUCTOS Where codigo="+"?";
             consultaProducto= con.prepareStatement(consulta);
-            consultaProducto.executeQuery();
-            con.commit();
-        }
-        catch (SQLException e ) {
-        //JDBCTutorialUtilities.printSQLException(e);
-        if (con != null) {
-            try {
-                System.err.print("Transaction is being rolled back");
-                con.rollback();
-            } catch(SQLException excep) {
-                //JDBCTutorialUtilities.printSQLException(excep);
-            }
-        }
-    } finally {
-        if (updateProducto != null) {
-            updateProducto.close();
-        }
-        if (updateProducto != null) {
-            updateProducto.close();
-        }
-        con.setAutoCommit(true);
-    }
-        con.close();
-        
-        
-        
-    }
-    
-    
+            consultaProducto.executeQuery();    
+}
     
 }
